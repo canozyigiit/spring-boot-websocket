@@ -1,0 +1,176 @@
+<html>
+<head>
+    <style>
+        .bubble {
+            position: relative;
+            background: #00aabb;
+            border-radius: .4em;
+        }
+        .bubble {
+            width: 260px;
+            padding: 60px 20px;
+            margin: 1em 0;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 200%;
+            text-shadow: 0 -0.05em 0.1em rgba(0,0,0,.3);
+        }
+
+        /*.bubble:after {*/
+        /*    content: '';*/
+        /*    position: absolute;*/
+        /*    bottom: 0;*/
+        /*    left: 50%;*/
+        /*    width: 0;*/
+        /*    height: 0;*/
+        /*    border: 20px solid transparent;*/
+        /*    border-top-color: #00aabb;*/
+        /*    border-bottom: 0;*/
+        /*    border-left: 0;*/
+        /*    margin-left: -10px;*/
+        /*    margin-bottom: -20px;*/
+        /*}*/
+        .bubble h1 {
+            color:white;
+            margin: 0;
+            font-size: 150%;
+        }
+        .bubble h2 {
+            margin: 0;
+            font-size: 40%;
+            font-weight: normal;
+        }
+        #connect{
+            border: none;
+            color: white;
+            background-color: #4CAF50;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 2px solid #4CAF50;
+            -moz-border-radius: 16px;
+            -webkit-border-radius: 16px;
+            border-radius: 16px;
+        }
+        #connect:hover{
+            color: #4CAF50;
+            background-color: #fff;
+            border: 2px solid #4CAF50;
+        }
+        #disconnect{
+            border: none;
+            color: white;
+            background-color: #af4c4f;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 2px solid #af4c4f;
+            -moz-border-radius: 16px;
+            -webkit-border-radius: 16px;
+            border-radius: 16px;
+        }
+        #disconnect:hover{
+            color: #4CAF50;
+            background-color: #fff;
+            border: 2px solid #4CAF50;
+        }
+        #sendMessage{
+            border: none;
+            color: white;
+            background-color: #59af4c;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 2px solid #59af4c;
+            -moz-border-radius: 16px;
+            -webkit-border-radius: 16px;
+            border-radius: 16px;
+        }
+        #sendMessage:hover{
+            color: #4CAF50;
+            background-color: #fff;
+            border: 2px solid #4CAF50;
+        }
+        #container
+        {
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            left: 50%;
+            top: 30%;
+            margin-left: -70px;
+            margin-top: -50px;
+        }
+
+    </style>
+    <title>Chat WebSocket</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.js"></script>
+    <script type="text/javascript">
+        var stompClient = null;
+        var baseAddress = 'http://localhost:8080';
+
+        function setConnected(connected) {
+            document.getElementById('connect').disabled = connected;
+            document.getElementById('disconnect').disabled = !connected;
+            document.getElementById('conversationDiv').style.visibility = connected ? 'visible' : 'hidden';
+            document.getElementById('response').innerHTML = '';
+        }
+
+        function connect() {
+            var socket = new SockJS(baseAddress + '/chat');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function(frame) {
+                setConnected(true);
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/topic', function (message) {
+                    handleReceivedMessage(JSON.parse(message.body));
+                });
+            });
+        }
+
+        function disconnect() {
+            if(stompClient != null) {
+                stompClient.disconnect();
+            }
+            setConnected(false);
+            console.log("Disconnected");
+        }
+
+        function sendMessage() {
+            var from = document.getElementById('from').value;
+            var text = document.getElementById('text').value;
+            stompClient.send("/chat", {},
+                JSON.stringify({'sender':from, 'message':text}));
+        }
+
+        function handleReceivedMessage(message) {
+            var response = document.getElementById('response');
+            var p = document.createElement('p');
+            p.style.wordWrap = 'break-word';
+            p.appendChild(document.createTextNode(message.sender + ": " + message.message ));
+            response.appendChild(p);
+        }
+    </script>
+</head>
+<body style="background:#1f1f1f" onload="disconnect()">
+<div id="container">
+
+    <div>
+        <input type="text" id="from" placeholder="Kullanici Adi"/>
+    </div>
+    <br />
+    <div>
+        <button id="connect" onclick="connect();">Baglan</button>
+    </div>
+    <div><button id="disconnect" disabled="disabled" onclick="disconnect();">
+        Cikis
+    </button></div>
+    <br />
+    <div id="conversationDiv">
+        <input type="text" id="text" placeholder="Mesaj.."/>
+        <button id="sendMessage" onclick="sendMessage();">Send</button>
+        <p class="bubble" id="response"></p>
+    </div>
+</div>
+
+</body>
+</html>
